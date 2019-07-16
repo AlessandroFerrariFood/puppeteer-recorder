@@ -14,10 +14,11 @@
           </h4>
           <div class="settings-block-main">
             <div class="settings-group">
-              <label class="settings-label">custom data attribute</label>
-              <input id="options-code-dataAttribute" type="text" v-model="options.code.dataAttribute" @change="save" placeholder="your custom data-* attribute">
-              <small>Define a <code>data-*</code> attribute that we'll attempt to use when selecting the elements. This is handy
-                when React or Vue based apps generate random class names.</small>
+              <label class="settings-label">custom finder sortingFilter function</label>
+              <select id="options-code-dataAttribute" v-model="options.code.dataAttribute" @change="save">
+                <option value="HUB">HUB</option>
+                <option value="IFN">IFN</option>
+              </select>
             </div>
           </div>
         </div>

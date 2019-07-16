@@ -2,7 +2,7 @@ import eventsToRecord from '../code-generator/dom-events-to-record'
 import UIController from './UIController'
 import actions from '../models/extension-ui-actions'
 import ctrl from '../models/extension-control-messages'
-import finder from '@medv/finder'
+import {finder} from './finder'
 
 const DEFAULT_MOUSE_CURSOR = 'default'
 
@@ -93,6 +93,33 @@ export default class EventRecorder {
     }
   }
 
+  _sortingFilter (blocks) {
+    switch (this._dataAttribute) {
+      case 'HUB':
+        return blocks.filter(b => {
+          switch (b.type) {
+            case 'attribute':
+              if (b.name === 'id' && b.value.startsWith('react-')) {
+                return false
+              }
+              return !['value', 'src', 'alt', 'title'].includes(b.name)
+            case 'class':
+              return !b.name.startsWith('css-')
+          }
+          return true
+        })
+      case 'IFN':
+        break
+    }
+    return blocks.filter(b => {
+      switch (b.type) {
+        case 'attribute':
+          return !['value', 'src', 'alt', 'title'].includes(b.name)
+      }
+      return true
+    })
+  }
+
   _recordEvent (e) {
     if (this._previousEvent && this._previousEvent.timeStamp === e.timeStamp) return
     this._previousEvent = e
@@ -100,10 +127,7 @@ export default class EventRecorder {
     // we explicitly catch any errors and swallow them, as none node-type events are also ingested.
     // for these events we cannot generate selectors, which is OK
     try {
-      const optimizedMinLength = (e.target.id) ? 2 : 10 // if the target has an id, use that instead of multiple other selectors
-      const selector = this._dataAttribute && e.target.hasAttribute && e.target.hasAttribute(this._dataAttribute)
-        ? EventRecorder._formatDataSelector(e.target, this._dataAttribute)
-        : finder(e.target, {seedMinLength: 5, optimizedMinLength: optimizedMinLength})
+      const selector = finder(e.target, this._sortingFilter.bind(this))
 
       const msg = {
         selector: selector,
@@ -115,7 +139,9 @@ export default class EventRecorder {
         coordinates: EventRecorder._getCoordinates(e)
       }
       this._sendMessage(msg)
-    } catch (e) {}
+    } catch (e) {
+      console.debug('finder error', e)
+    }
   }
 
   _getEventLog () {
